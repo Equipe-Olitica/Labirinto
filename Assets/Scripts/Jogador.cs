@@ -37,7 +37,7 @@ public class Jogador : MonoBehaviour
 
     void Update()
     {
-        if (gameEnded) return;
+        if (gameEnded || PauseMenu.isPaused) return;
 
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
@@ -51,7 +51,7 @@ public class Jogador : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (gameEnded || isRespawning) return;
+        if (gameEnded || isRespawning || PauseMenu.isPaused) return;
 
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
