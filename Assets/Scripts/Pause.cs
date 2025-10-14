@@ -16,7 +16,7 @@ public class PauseMenu : MonoBehaviour
                 if (isInConfig)
                     ExitOptions();
                 else
-                     Resume();
+                    Resume();
             }
             else
                 Pause();
@@ -26,29 +26,51 @@ public class PauseMenu : MonoBehaviour
     public void Resume()
     {
         isPaused = false;
-        pauseMenuUI.SetActive(false);
+        isInConfig = false;
+
+        if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
+        if (configMenuUI != null) configMenuUI.SetActive(false);
+
         Time.timeScale = 1f;
+
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void Pause()
     {
-        pauseMenuUI.SetActive(true);
-        Time.timeScale = 0f;
         isPaused = true;
+        isInConfig = false;
+
+        if (pauseMenuUI != null) pauseMenuUI.SetActive(true);
+
+        Time.timeScale = 0f;
+
         Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     public void Options()
     {
-        pauseMenuUI.SetActive(false);
+        if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
+        if (configMenuUI != null) configMenuUI.SetActive(true);
+
         isInConfig = true;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     public void ExitOptions()
     {
-        configMenuUI.SetActive(false);
+        if (configMenuUI != null) configMenuUI.SetActive(false);
         isInConfig = false;
-        Resume();
+
+        if (pauseMenuUI != null) pauseMenuUI.SetActive(true);
+
+        isPaused = true;
+        Time.timeScale = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }

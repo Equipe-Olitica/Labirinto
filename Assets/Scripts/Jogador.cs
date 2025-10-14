@@ -8,11 +8,11 @@ public class Jogador : MonoBehaviour
 {
     [Header("Movimento")]
     public float moveSpeed = 4f;
-    public float sprintMultiplier = 1.8f;
+    public float sprintMultiplier = 1.2f;
 
     [Header("Stamina")]
-    public float maxStamina = 100f;
-    public float staminaDecreaseRate = 45f;
+    public float maxStamina = 60f;
+    public float staminaDecreaseRate = 50f;
     public float staminaRecoveryRate = 10f;
     public Slider staminaBar;
     private float currentStamina;
