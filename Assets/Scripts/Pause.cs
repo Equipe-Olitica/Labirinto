@@ -3,14 +3,21 @@ using UnityEngine;
 public class PauseMenu : MonoBehaviour
 {
     public GameObject pauseMenuUI;
+    public GameObject configMenuUI;
     public static bool isPaused = false;
+    public static bool isInConfig = false;
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (isPaused)
-                Resume();
+            {
+                if (isInConfig)
+                    ExitOptions();
+                else
+                     Resume();
+            }
             else
                 Pause();
         }
@@ -30,5 +37,18 @@ public class PauseMenu : MonoBehaviour
         Time.timeScale = 0f;
         isPaused = true;
         Cursor.lockState = CursorLockMode.None;
+    }
+
+    public void Options()
+    {
+        pauseMenuUI.SetActive(false);
+        isInConfig = true;
+    }
+
+    public void ExitOptions()
+    {
+        configMenuUI.SetActive(false);
+        isInConfig = false;
+        Resume();
     }
 }

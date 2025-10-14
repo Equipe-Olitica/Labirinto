@@ -1,11 +1,26 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody))]
 public class Jogador : MonoBehaviour
 {
     [Header("Movimento")]
-    public float moveSpeed = 6f;
+    public float moveSpeed = 4f;
+    public float sprintMultiplier = 1.8f;
+
+    [Header("Stamina")]
+    public float maxStamina = 100f;
+    public float staminaDecreaseRate = 45f;
+    public float staminaRecoveryRate = 10f;
+    public Slider staminaBar;
+    private float currentStamina;
+    private bool isSprinting = false;
+
+    [Header("Pulo")]
+    public float jumpForce = 4f;
+    private bool isGrounded;
 
     [Range(0.1f, 20f)]
     public float mouseSensitivity = 5f;
@@ -33,6 +48,13 @@ public class Jogador : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        currentStamina = maxStamina;
+        if (staminaBar != null)
+        {
+            staminaBar.maxValue = maxStamina;
+            staminaBar.value = currentStamina;
+        }
     }
 
     void Update()
@@ -47,6 +69,15 @@ public class Jogador : MonoBehaviour
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
         cameraHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        CheckGround();
+
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            Jump();
+        }
+
+        HandleSprint();
     }
 
     void FixedUpdate()
@@ -62,9 +93,11 @@ public class Jogador : MonoBehaviour
         Vector3 moveDirection = forward * verticalInput + right * horizontalInput;
         moveDirection.y = 0;
 
+        float currentSpeed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
+
         if (moveDirection.sqrMagnitude > 0.01f)
         {
-            Vector3 targetPosition = rb.position + moveDirection.normalized * moveSpeed * Time.fixedDeltaTime;
+            Vector3 targetPosition = rb.position + moveDirection.normalized * currentSpeed * Time.fixedDeltaTime;
             rb.MovePosition(targetPosition);
 
             if (!stepsAudio.isPlaying)
@@ -110,7 +143,7 @@ public class Jogador : MonoBehaviour
         if (ambientAudio.isPlaying)
             ambientAudio.Stop();
 
-        Destroy(gameObject);
+        Restart();
     }
 
     IEnumerator FinalSequence()
@@ -170,4 +203,58 @@ public class Jogador : MonoBehaviour
 
         isRespawning = false;
     }
+
+    public void Restart()
+    {
+        Time.timeScale = 1f;
+        PauseMenu.isPaused = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    void HandleSprint()
+    {
+        bool sprintKeyHeld = Input.GetKey(KeyCode.LeftShift);
+        bool moving = Input.GetAxis("Vertical") > 0.1f || Input.GetAxis("Horizontal") > 0.1f;
+
+        if (sprintKeyHeld && moving && currentStamina > 0)
+        {
+            isSprinting = true;
+            currentStamina -= staminaDecreaseRate * Time.deltaTime;
+            if (currentStamina <= 0)
+            {
+                currentStamina = 0;
+                isSprinting = false;
+            }
+        }
+        else
+        {
+            isSprinting = false;
+            if (currentStamina < maxStamina)
+            {
+                currentStamina += staminaRecoveryRate * Time.deltaTime;
+                if (currentStamina > maxStamina)
+                    currentStamina = maxStamina;
+            }
+        }
+
+        if (staminaBar != null)
+            staminaBar.value = currentStamina;
+    }
+
+    void CheckGround()
+    {
+        isGrounded = Physics.CheckSphere(transform.position, 0.3f, ~0, QueryTriggerInteraction.Ignore);
+    }
+
+    void Jump()
+    {
+        Vector3 velocity = rb.linearVelocity;
+        velocity.y = 0f;
+        rb.linearVelocity = velocity;
+
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+    }
+
 }
