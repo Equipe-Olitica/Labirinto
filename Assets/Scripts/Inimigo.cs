@@ -4,7 +4,7 @@ using UnityEngine;
 public class Inimigo : MonoBehaviour
 {
     [Header("Movimento")]
-    public float moveSpeed = 3.5f;
+    public float moveSpeed = 2f;
     public float changeDirectionTime = 2f;
     public float obstacleCheckDistance = 1f;
 

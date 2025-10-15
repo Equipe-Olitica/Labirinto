@@ -7,8 +7,9 @@ using UnityEngine.UI;
 public class Jogador : MonoBehaviour
 {
     [Header("Movimento")]
-    public float moveSpeed = 4f;
-    public float sprintMultiplier = 1.2f;
+    public float moveSpeed = 1f;
+    public float sprintMultiplier = 1.1f;
+    public float controllerRadius = 0.3f; // usado para SphereCast
 
     [Header("Stamina")]
     public float maxStamina = 60f;
@@ -45,6 +46,8 @@ public class Jogador : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -68,7 +71,8 @@ public class Jogador : MonoBehaviour
 
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-        cameraHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        if (cameraHolder != null)
+            cameraHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 
         CheckGround();
 
@@ -97,15 +101,29 @@ public class Jogador : MonoBehaviour
 
         if (moveDirection.sqrMagnitude > 0.01f)
         {
-            Vector3 targetPosition = rb.position + moveDirection.normalized * currentSpeed * Time.fixedDeltaTime;
-            rb.MovePosition(targetPosition);
+            Vector3 normalized = moveDirection.normalized;
+            Vector3 targetPosition = rb.position + normalized * currentSpeed * Time.fixedDeltaTime;
 
-            if (!stepsAudio.isPlaying)
+            float checkDistance = (currentSpeed * Time.fixedDeltaTime) + 0.05f;
+            RaycastHit hit;
+            bool obstacleAhead = Physics.SphereCast(rb.position, controllerRadius, normalized, out hit, checkDistance, ~0, QueryTriggerInteraction.Ignore);
+
+            if (!obstacleAhead)
+            {
+                rb.MovePosition(targetPosition);
+            }
+            else
+            {
+                Vector3 safePos = rb.position + normalized * Mathf.Max(0f, hit.distance - controllerRadius);
+                rb.MovePosition(safePos);
+            }
+
+            if (stepsAudio != null && !stepsAudio.isPlaying)
                 stepsAudio.Play();
         }
         else
         {
-            if (stepsAudio.isPlaying)
+            if (stepsAudio != null && stepsAudio.isPlaying)
                 stepsAudio.Stop();
         }
 
@@ -137,10 +155,10 @@ public class Jogador : MonoBehaviour
 
     void GameOver()
     {
-        if (stepsAudio.isPlaying)
+        if (stepsAudio != null && stepsAudio.isPlaying)
             stepsAudio.Stop();
 
-        if (ambientAudio.isPlaying)
+        if (ambientAudio != null && ambientAudio.isPlaying)
             ambientAudio.Stop();
 
         Restart();
@@ -150,10 +168,10 @@ public class Jogador : MonoBehaviour
     {
         gameEnded = true;
 
-        if (stepsAudio.isPlaying)
+        if (stepsAudio != null && stepsAudio.isPlaying)
             stepsAudio.Stop();
 
-        if (ambientAudio.isPlaying)
+        if (ambientAudio != null && ambientAudio.isPlaying)
             ambientAudio.Stop();
 
         Vector3 targetPosition = transform.position + transform.forward * 3f + Vector3.up * 1.2f;
@@ -199,7 +217,8 @@ public class Jogador : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
 
         rb.position = respawnPoint.position;
-        rb.rotation = Quaternion.identity;
+        rb.rotation = respawnPoint.rotation;
+        rb.linearVelocity = Vector3.zero;
 
         isRespawning = false;
     }
@@ -216,7 +235,7 @@ public class Jogador : MonoBehaviour
     void HandleSprint()
     {
         bool sprintKeyHeld = Input.GetKey(KeyCode.LeftShift);
-        bool moving = Input.GetAxis("Vertical") > 0.1f || Input.GetAxis("Horizontal") > 0.1f;
+        bool moving = Mathf.Abs(Input.GetAxis("Vertical")) > 0.1f || Mathf.Abs(Input.GetAxis("Horizontal")) > 0.1f;
 
         if (sprintKeyHeld && moving && currentStamina > 0)
         {
@@ -245,7 +264,8 @@ public class Jogador : MonoBehaviour
 
     void CheckGround()
     {
-        isGrounded = Physics.CheckSphere(transform.position, 0.3f, ~0, QueryTriggerInteraction.Ignore);
+        Vector3 spherePos = transform.position + Vector3.down * 0.5f;
+        isGrounded = Physics.CheckSphere(spherePos, 0.3f, ~0, QueryTriggerInteraction.Ignore);
     }
 
     void Jump()
@@ -256,5 +276,4 @@ public class Jogador : MonoBehaviour
 
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
-
 }
