@@ -23,6 +23,7 @@ public class Jogador : MonoBehaviour
     public float jumpForce = 4f;
     private bool isGrounded;
 
+    [Header("Sensibilidade")]
     [Range(0.1f, 20f)]
     public float mouseSensitivity = 5f;
 
@@ -41,6 +42,7 @@ public class Jogador : MonoBehaviour
 
     private Rigidbody rb;
     private float xRotation = 0f;
+    private float yRotationInput = 0f;
 
     void Start()
     {
@@ -67,7 +69,8 @@ public class Jogador : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-        transform.Rotate(Vector3.up * mouseX);
+        yRotationInput += mouseX;
+        //transform.Rotate(Vector3.up * mouseX);
 
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
@@ -87,6 +90,9 @@ public class Jogador : MonoBehaviour
     void FixedUpdate()
     {
         if (gameEnded || isRespawning || PauseMenu.isPaused) return;
+
+        rb.MoveRotation(rb.rotation * Quaternion.Euler(Vector3.up * yRotationInput));
+        yRotationInput = 0f;
 
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
